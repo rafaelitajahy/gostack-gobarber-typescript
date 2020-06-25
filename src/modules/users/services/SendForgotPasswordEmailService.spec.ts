@@ -5,16 +5,16 @@ import FakeUsersRepository from '../repositories/fakes/FakeUsersRepository';
 import FakeUserTokensRepository from '../repositories/fakes/FakeUserTokensRepository';
 import SendForgotPasswordEmailService from './SendForgotPasswordEmailService';
 
-let fakeUsersRepository: FakeUsersRepository;
 let fakeMailProvider: FakeMailProvider;
+let fakeUsersRepository: FakeUsersRepository;
 let fakeUserTokensRepository: FakeUserTokensRepository;
 let sendForgotPasswordEmail: SendForgotPasswordEmailService;
 
 describe('SendForgotPasswordEmail', () => {
   beforeEach(() => {
     fakeUsersRepository = new FakeUsersRepository();
-    fakeMailProvider = new FakeMailProvider();
     fakeUserTokensRepository = new FakeUserTokensRepository();
+    fakeMailProvider = new FakeMailProvider();
 
     sendForgotPasswordEmail = new SendForgotPasswordEmailService(
       fakeUsersRepository,
@@ -27,39 +27,41 @@ describe('SendForgotPasswordEmail', () => {
     const sendMail = jest.spyOn(fakeMailProvider, 'sendMail');
 
     await fakeUsersRepository.create({
-      name: 'Jonh Doe',
-      email: 'jonhdoe@example.com',
+      name: 'John Doe',
+      email: 'johndoe@example.com',
       password: '123456',
     });
 
     await sendForgotPasswordEmail.execute({
-      email: 'jonhdoe@example.com',
+      email: 'johndoe@example.com',
     });
 
-    expect(sendMail).toHaveBeenCalled();
+    expect(sendMail).toBeCalled();
   });
 
   it('should not be able to recover a non-existing user password', async () => {
     await expect(
       sendForgotPasswordEmail.execute({
-        email: 'jonhdoe@example.com',
+        email: 'johndoe@example.com',
       }),
     ).rejects.toBeInstanceOf(AppError);
   });
 
   it('should generate a forgot password token', async () => {
+    const sendMail = jest.spyOn(fakeMailProvider, 'sendMail');
     const generateToken = jest.spyOn(fakeUserTokensRepository, 'generate');
 
     const user = await fakeUsersRepository.create({
-      name: 'Jonh Doe',
-      email: 'jonhdoe@example.com',
+      name: 'John Doe',
+      email: 'johndoe@example.com',
       password: '123456',
     });
 
     await sendForgotPasswordEmail.execute({
-      email: 'jonhdoe@example.com',
+      email: 'johndoe@example.com',
     });
 
-    expect(generateToken).toHaveBeenCalledWith(user.id);
+    expect(sendMail).toBeCalled();
+    expect(generateToken).toBeCalledWith(user.id);
   });
 });
